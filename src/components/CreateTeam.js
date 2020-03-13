@@ -61,7 +61,7 @@ function CreateTeam(props) {
   const renderPlayer = player => {
     let name = "button is-dark is-light " + player.given + player.family;
     return (
-      <div className="field has-addons" key={player}>
+      <div className="field has-addons" key={JSON.stringify(player)}>
         <div class="control">
           <input
             class="input"
@@ -120,13 +120,18 @@ function CreateTeam(props) {
     } else if (players.length < 1) {
       setError("Please add players to your team.");
     } else {
-      setTeamName(teamName.replace(" ","-").toUpperCase())
+      const temp = teamName.replace(" ", "-").toUpperCase();
+      setTeamName(temp);
+      console.log({
+        players: players,
+        teamName: temp
+      });
       fire
         .database()
-        .ref("teams/" + teamName)
+        .ref("teams/" + temp)
         .set({
           players: players,
-          name: teamName.replace(" ","-").toUpperCase()
+          teamName: temp
         });
       setQueryStatus(1);
     }
@@ -161,7 +166,7 @@ function CreateTeam(props) {
             <div className="field has-addons">
               <div className="control">
                 <button
-                  className="button is-primary"
+                  className="button is-primary is-light is-outlined"
                   onClick={createTeamHandler}
                 >
                   <span className="icon is-small">
@@ -198,7 +203,7 @@ function CreateTeam(props) {
               </div>
               <div className="control">
                 <button
-                  className="button is-primary"
+                  className="button is-primary is-light is-outlined"
                   onClick={addPlayerHandler}
                 >
                   <span className="icon is-small">
@@ -211,6 +216,18 @@ function CreateTeam(props) {
               Once you've added all the players, click the cloud icon to upload
               your team.
             </p>
+            <div className="field">
+              {" "}
+              <div className="control is-expanded">
+                <button
+                  className="button is-info is-light is-fullwidth"
+                  onClick={props.addTeamHandler}
+                >
+                  Back
+                </button>
+              </div>
+            </div>
+
             <p class="help is-danger">{error}</p>
           </div>
         </div>
@@ -223,7 +240,9 @@ function CreateTeam(props) {
       <div className="columns">
         <div className="column is-one-third is-offset-one-third">
           <article class="message is-info">
-            <div class="message-body">Your team was created successfully. Here it is:</div>
+            <div class="message-body">
+              Your team was created successfully. Here it is:
+            </div>
           </article>
           <div className="field has-addons" key={teamName}>
             <div class="control is-expanded">
@@ -236,6 +255,14 @@ function CreateTeam(props) {
             </div>
           </div>
           {renderPlayers(players)}
+          <div className="field">
+            {" "}
+            <div className="control is-expanded">
+              <button className="button is-info is-light is-fullwidth" onClick={props.addTeamHandler}>
+                Back
+              </button>
+            </div>
+          </div>
         </div>
       </div>
     </div>
