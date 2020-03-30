@@ -7100,3 +7100,23 @@ label.panel-block {
 .footer {
   background-color: #fafafa;
   padding: 3rem 1.5rem 6rem; }
+
+html,
+body {
+  height: 100%;
+  font-family: sans-serif; }
+
+body {
+  margin: 0;
+  padding: 0; }
+
+#root {
+  display: flex;
+  flex-direction: column;
+  height: 100%; }
+
+.app {
+  flex: 1 0 auto; }
+
+.footer {
+  flex-shrink: 0; }

@@ -3,148 +3,158 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 
 import fire from "../fire";
 import Players from "./Players";
-import Footer from "./Footer";
 import CreateTeam from "./CreateTeam";
 
 function Main(props) {
   const [teams, setTeams] = useState([]);
-  const [home, setHome] = useState({teamName:"",players:[]});
-  const [away, setAway] = useState({teamName:"",players:[]});
+  const [team, setTeam] = useState({ teamName: "", players: ["none"] });
+  const [home, setHome] = useState({ teamName: "", players: ["none"] });
+  const [away, setAway] = useState({ teamName: "", players: ["none"] });
+  const [selectedPlayers, setSelectedPlayers] = useState([{}])
   const [addingTeam, setAddingTeam] = useState(false);
+  const [playersLoading, setPlayersLoading] = useState(false);
+  const [side, setSide] = useState("Away");
 
+  useEffect(() => {
+    let teamsRef = fire.database().ref("/teams");
+    let homeRef = fire.database().ref("/Home");
+    let awayRef = fire.database().ref("/Away");
+    setPlayersLoading(true);
+    teamsRef.on("value", function(snapshot) {
+      let val = convertJSONtoArray(snapshot.val());
+      if (val.length > 0) {
+        let def = val[0];
+        setTeam(def);
+        setTeams(val);
+      }
+      setPlayersLoading(false);
+    });
+
+    homeRef.on("value", function(snapshot) {
+      let homeTeam = snapshot.val();
+      setHome(homeTeam);
+    });
+
+    awayRef.on("value", function(snapshot) {
+      let awayTeam = snapshot.val();
+      setAway(awayTeam);
+    });
+  }, [setTeams]);
+
+  // Event Handlers
+  const onAddTeam = () => {
+    setAddingTeam(!addingTeam);
+  };
+
+  const onTeamChange = event => {
+    const newTeam = teams.find(
+      current => current.teamName === event.target.value
+    );
+    setTeam(newTeam);
+    setSelectedPlayers(newTeam.selectedPlayers||["none"])
+  };
+
+  const onSideChange = event => {
+    if (side === "Home") {
+      setSide("Away");
+      setTeam(away);
+    } else {
+      setSide("Home");
+      setTeam(home);
+    }
+  };
+
+  // Helper functions
   const convertJSONtoArray = json => {
     let array = [];
     for (let key in json) {
       array.push(json[key]);
     }
-
     return array;
   };
 
-  useEffect(() => {
-    let teamsRef = fire.database().ref("/teams");
-    teamsRef.on("value", function(snapshot) {
-      let val = convertJSONtoArray(snapshot.val());
-      console.log(val)
-      if(val.length>0){
-      let def = val[0];
-      setHome(def);
-      setAway(def);
-      setTeams(val);
-    } 
-    });
-  }, [setTeams]);
-
-  const renderOptions = teams => {
-    let content = teams.map(team => {
-      return renderOption(team);
+  // Rendering functions
+  const renderOptions = options => {
+    let content = options.map(option => {
+      return renderOption(option);
     });
     return content;
   };
 
-  const renderOption = team => {
+  const renderOption = option => {
     return (
-      <option key={team.teamName} value={JSON.stringify(team)}>
-        {team.teamName}
+      <option key={option.teamName} value={option.teamName}>
+        {option.teamName}
       </option>
     );
   };
 
-  const addTeamHandler = () => {
-    setAddingTeam(!addingTeam);
-  };
-
-  const onHomeTeamChange = event => {
-    fire
-      .database()
-      .ref("home")
-      .set({
-        players: []
-      });
-    setHome(JSON.parse(event.target.value));
-  };
-
-  const onAwayTeamChange = event => {
-    fire
-      .database()
-      .ref("away")
-      .set({
-        players: []
-      });
-    setAway(JSON.parse(event.target.value));
+  const renderLoadingMessage = (loadingToTrack, message) => {
+    if (loadingToTrack) {
+      return (
+        <p className="is-size-3 has-text-centered has-icons-left">
+          <span className="icon is-large">
+            <FontAwesomeIcon icon="spinner" spin />
+          </span>
+          {message}
+        </p>
+      );
+    } else {
+      return <div></div>;
+    }
   };
 
   const content = addingTeam ? (
-    <CreateTeam addTeamHandler={addTeamHandler} />
+    <CreateTeam addTeamHandler={onAddTeam} selectedPlayers={selectedPlayers} />
   ) : (
-    <div>
+    <div className="">
       <div className="section">
         <div className="columns">
           <div className="column is-one-third is-offset-one-third">
             <div class="field has-addons">
               <p class="control">
-                <a class="button is-static is-light is-primary is-outlined">Home</a>
+                <button
+                  class="button is-light is-primary is-outlined"
+                  onClick={onSideChange}
+                >
+                  {side}
+                </button>
               </p>
               <div class="control is-expanded">
                 <div class="select is-primary is-fullwidth">
                   <select
-                    onChange={onHomeTeamChange}
-                    value={JSON.stringify(home)}
-                    disabled = {teams.length===0}
+                    onChange={onTeamChange}
+                    value={team.teamName}
+                    disabled={teams.length === 0}
                   >
                     {renderOptions(teams)}
                   </select>
                 </div>
               </div>
               <div className="control">
-                <button className="button is-primary is-light is-outlined" onClick={addTeamHandler}>
+                <button
+                  className="button is-primary is-light is-outlined"
+                  onClick={onAddTeam}
+                >
                   <span className="icon is-small">
                     <FontAwesomeIcon icon="plus" />
                   </span>
                 </button>
               </div>
             </div>
-
-            <Players
-              players={home.players}
-              onSelectedChange={props.onHomeChange}
-            />
-
-            <div class="field has-addons">
-              <p class="control">
-                <a class="button is-static is-primary is-light is-outlined">Away</a>
+            {renderLoadingMessage(playersLoading, "Loading players...")}
+            <Players team={team} side={side} loading={playersLoading} />
+            {teams.length === 0 && !playersLoading ? (
+              <p className="help is-danger">
+                Looks like there aren't any teams. Add a few by clicking one of
+                the plus icons above.
               </p>
-              <div class="control is-expanded">
-                <div class="select is-primary is-fullwidth">
-                  <select
-                    onChange={onAwayTeamChange}
-                    value={JSON.stringify(away)}
-                    disabled = {teams.length===0}
-                  >
-                    {renderOptions(teams)}
-                  </select>
-                </div>
-              </div>
-              <div className="control">
-                <button className="button is-primary is-light is-outlined" onClick={addTeamHandler}>
-                  <span className="icon is-small">
-                    <FontAwesomeIcon icon="plus" />
-                  </span>
-                </button>
-              </div>
-            </div>
-            {teams.length ===0?<p className="help is-danger">
-              Looks like there aren't any times. Add a few by clicking one of the plus icons above.
-            </p>:<div></div>}
-            
-            <Players
-              players={away.players}
-              onSelectedChange={props.onAwayChange}
-            />
+            ) : (
+              <div></div>
+            )}
           </div>
         </div>
       </div>
-      <Footer />
     </div>
   );
 

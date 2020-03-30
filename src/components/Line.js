@@ -3,7 +3,8 @@ import Footer from "./Footer";
 import fire from "../fire";
 
 function Line(props) {
-  const [players, setPlayers] = useState([]);
+  const [selectedPlayers, setSelectedPlayers] = useState(["none"])
+  const [teamName, setTeamName] = useState("")
 
   const convertJSONtoArray = json => {
     let array = [];
@@ -17,11 +18,10 @@ function Line(props) {
     let path = props.location.pathname;
     let teamsRef = fire.database().ref(path);
     teamsRef.on("value", function(snapshot) {
-      if (!snapshot.val()) {
-        setPlayers([]);
-      } else {
-        let val = convertJSONtoArray(snapshot.val().players);
-        setPlayers(val);
+      if (snapshot.val()) {
+        let players = convertJSONtoArray(snapshot.val().selectedPlayers);
+        setSelectedPlayers(players);
+        setTeamName(snapshot.val().teamName)
       }
     });
   }, []);
@@ -51,20 +51,20 @@ function Line(props) {
       <div className="section">
         <div className="columns">
           <div className="column is-one-third is-offset-one-third">
+            <p className="subtitle is-4">{teamName}</p>
             <div className="">
-              {players.length===0? <article class="message is-warning">
+              {selectedPlayers.length===0 || selectedPlayers[0] === "none" ? <article class="message is-warning">
             <div class="message-body">
               Looks like there aren't any players on the line yet.
             </div>
           </article>:
-              <table className="table is-striped is-narrow ">
-                <tbody> {renderPlayers(players)}</tbody>
+              <table className="table is-striped is-narrow is-bordered ">
+                <tbody>{renderPlayers(selectedPlayers)}</tbody>
               </table>}
             </div>
           </div>
         </div>
       </div>
-      <Footer />
     </div>
   );
 }

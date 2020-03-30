@@ -23,9 +23,9 @@ function CreateTeam(props) {
       setError("Players need numbers.");
     } else {
       let playerToAdd = {};
-      playerToAdd.given = newPlayerGiven.replace(" ", "-").toUpperCase();
-      playerToAdd.family = newPlayerFamily.replace(" ", "-").toUpperCase();
-      playerToAdd.number = newPlayerNumber.replace(" ", "-").toUpperCase();
+      playerToAdd.given = newPlayerGiven.replace(/ /g, "-").toUpperCase();
+      playerToAdd.family = newPlayerFamily.replace(/ /g, "-").toUpperCase();
+      playerToAdd.number = newPlayerNumber.replace(/ /g, "-").toUpperCase();
       playersCopy.push(playerToAdd);
       setNewPlayerGiven("");
       setNewPlayerFamily("");
@@ -120,7 +120,7 @@ function CreateTeam(props) {
     } else if (players.length < 1) {
       setError("Please add players to your team.");
     } else {
-      const temp = teamName.replace(" ", "-").toUpperCase();
+      const temp = teamName.replace(/ /g, "-").toUpperCase();
       setTeamName(temp);
       console.log({
         players: players,
